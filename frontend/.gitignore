@@ -8,7 +8,7 @@ pnpm-debug.log*
 lerna-debug.log*
 
 node_modules
-dist
+# dist removed to allow committing build files
 dist-ssr
 *.local
 
