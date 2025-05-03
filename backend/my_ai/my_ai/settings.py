@@ -28,8 +28,11 @@ OPENAI_API_KEY = os.environ.get('OPENAI_API_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
-
+ALLOWED_HOSTS = [
+    "localhost",
+    "92.205.25.96",
+    "soback.cbu.net",
+]
 
 # Application definition
 
@@ -129,14 +132,12 @@ STATIC_URL = 'static/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # CORS settings
-# CORS_ALLOWED_ORIGINS = [
-#     "http://localhost:5173",
-    
-# ]
-CORS_ALLOW_ALL_ORIGINS = True
-ALLOWED_HOSTS = [
-    "localhost",
-    "92.205.25.96"
+CORS_ALLOW_ALL_ORIGINS = False
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:5173",
+    "http://92.205.25.96",
+    "http://soback.cbu.net",
+    "https://soback.cbu.net",
 ]
 
 STATIC_URL = '/static/'
