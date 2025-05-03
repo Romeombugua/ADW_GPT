@@ -2,13 +2,22 @@ import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 import * as apiService from '../apiService';
 
-function SessionList({ sessions, selectedSession, onSelectSession, onSessionCreated, selectedProject, isLoading, onError }) {
+function SessionList({ sessions, selectedSession, onSelectSession, onSessionCreated, selectedProject, isLoading, onError, projectFiles }) {
   const [newSessionName, setNewSessionName] = useState('');
   const [isCreating, setIsCreating] = useState(false);
+  
+  // Check if there are files uploaded for this project
+  const hasFiles = projectFiles && projectFiles.length > 0;
 
   const handleCreateSession = async (e) => {
     e.preventDefault();
     if (!newSessionName.trim() || !selectedProject) return;
+    
+    // Check if files have been uploaded
+    if (!projectFiles || projectFiles.length === 0) {
+      onError('Please upload at least one file before creating a session.');
+      return;
+    }
     
     setIsCreating(true);
     onError('');
@@ -62,16 +71,23 @@ function SessionList({ sessions, selectedSession, onSelectSession, onSessionCrea
             value={newSessionName}
             onChange={(e) => setNewSessionName(e.target.value)}
             placeholder="New session name"
-            disabled={isLoading || isCreating || !selectedProject}
+            disabled={isLoading || isCreating || !selectedProject || !hasFiles}
           />
           <button
             type="submit"
             className="btn btn-primary"
-            disabled={isLoading || isCreating || !newSessionName.trim() || !selectedProject}
+            disabled={isLoading || isCreating || !newSessionName.trim() || !selectedProject || !hasFiles}
           >
             {isCreating ? '...' : 'Create'}
           </button>
         </div>
+        
+        {selectedProject && !hasFiles && (
+          <div className="file-warning-message">
+            <span className="warning-icon">⚠️</span>
+            <span>Please upload at least one file before creating a session</span>
+          </div>
+        )}
       </form>
 
       <ul className="list">
@@ -123,6 +139,7 @@ SessionList.propTypes = {
   selectedProject: PropTypes.object,
   isLoading: PropTypes.bool.isRequired,
   onError: PropTypes.func.isRequired,
+  projectFiles: PropTypes.array,
 };
 
 export default SessionList;

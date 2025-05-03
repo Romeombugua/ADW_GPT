@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import * as apiService from '../apiService';
 
-function FileUpload({ selectedProject, isLoading, onError }) {
+function FileUpload({ selectedProject, isLoading, onError, onFilesChange }) {
   const [file, setFile] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [uploadSuccess, setUploadSuccess] = useState(false);
@@ -17,6 +17,13 @@ function FileUpload({ selectedProject, isLoading, onError }) {
       setUploadedFiles([]);
     }
   }, [selectedProject, uploadSuccess]);
+
+  // Notify parent component when files change
+  useEffect(() => {
+    if (onFilesChange) {
+      onFilesChange(uploadedFiles);
+    }
+  }, [uploadedFiles, onFilesChange]);
 
   const fetchUploadedFiles = async () => {
     if (!selectedProject) return;
@@ -170,6 +177,7 @@ FileUpload.propTypes = {
   selectedProject: PropTypes.object,
   isLoading: PropTypes.bool.isRequired,
   onError: PropTypes.func.isRequired,
+  onFilesChange: PropTypes.func,
 };
 
 export default FileUpload;

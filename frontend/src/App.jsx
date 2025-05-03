@@ -23,6 +23,8 @@ function App() {
     }
     return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
   });
+  // Track uploaded files for the selected project
+  const [projectFiles, setProjectFiles] = useState([]);
 
   // Apply theme class to document body
   useEffect(() => {
@@ -210,6 +212,7 @@ function App() {
                         selectedProject={selectedProject}
                         isLoading={isLoading}
                         onError={handleError}
+                        onFilesChange={setProjectFiles}
                       />
                     </div>
                     
@@ -227,6 +230,7 @@ function App() {
                         selectedProject={selectedProject}
                         isLoading={isLoading}
                         onError={handleError}
+                        projectFiles={projectFiles}
                       />
                     </div>
                   </>

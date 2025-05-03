@@ -2,6 +2,63 @@ import React, { useState, useEffect, useRef } from 'react';
 import PropTypes from 'prop-types';
 import * as apiService from '../apiService';
 
+// Utility function to format assistant messages
+const formatAssistantMessage = (content) => {
+  if (!content) return '';
+  
+  // Create a copy of the content to work with
+  let formattedContent = content;
+  
+  // Format numbered lists with proper structure (e.g., "1. Text", "2. Text", etc.)
+  formattedContent = formattedContent.replace(/(\d+\.\s)([^\n]+)(\n|$)/g, (match, number, text) => {
+    return `<div class="list-item"><span class="list-number">${number}</span><span class="list-text">${text}</span></div>`;
+  });
+  
+  // Format bold text with asterisks
+  formattedContent = formattedContent.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+  
+  // Handle italics with single asterisks
+  formattedContent = formattedContent.replace(/(?<!\*)\*(?!\*)([^\*]+)\*(?!\*)/g, '<em>$1</em>');
+  
+  // Format sections with header-like formatting
+  formattedContent = formattedContent.replace(/^(#+)\s+(.+)$/gm, (match, hashes, text) => {
+    const level = Math.min(hashes.length, 6); // h1-h6
+    return `<h${level} class="message-heading">${text}</h${level}>`;
+  });
+  
+  // Handle citations in square brackets [1], [2], etc.
+  formattedContent = formattedContent.replace(/\[(\d+)\]/g, '<span class="citation">[$1]</span>');
+  
+  // Handle nested lists (indented lists)
+  formattedContent = formattedContent.replace(/^(\s{2,})(\d+\.\s)([^\n]+)$/gm, (match, indent, number, text) => {
+    const indentLevel = Math.min(Math.floor(indent.length / 2), 3);
+    return `<div class="list-item nested-list level-${indentLevel}"><span class="list-number">${number}</span><span class="list-text">${text}</span></div>`;
+  });
+  
+  // Split into paragraphs and process each paragraph
+  const paragraphs = formattedContent.split('\n\n');
+  
+  // Process each paragraph
+  const processedParagraphs = paragraphs.map(para => {
+    if (!para.trim()) return '';
+    
+    // Skip wrapping with <p> if paragraph already contains divs, lists, or headings
+    if (
+      para.includes('<div class="list-item">') || 
+      para.includes('<h') ||
+      para.includes('<ul') ||
+      para.includes('<ol')
+    ) {
+      return para;
+    }
+    
+    return `<p>${para}</p>`;
+  });
+  
+  // Join processed paragraphs back together
+  return processedParagraphs.join('');
+};
+
 function ChatWindow({ selectedProject, selectedSession, isLoading, setIsLoading, onError }) {
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
@@ -140,9 +197,16 @@ function ChatWindow({ selectedProject, selectedSession, isLoading, setIsLoading,
                 <span className="message-role">{msg.role === 'user' ? 'You' : 'Assistant'}</span>
                 <span className="message-time">{formatTimestamp(msg.timestamp)}</span>
               </div>
-              <div className={`message-bubble ${msg.role === 'user' ? 'user-bubble' : 'assistant-bubble'}`}>
-                {msg.content}
-              </div>
+              {msg.role === 'assistant' ? (
+                <div 
+                  className="message-bubble assistant-bubble"
+                  dangerouslySetInnerHTML={{ __html: formatAssistantMessage(msg.content) }}
+                />
+              ) : (
+                <div className="message-bubble user-bubble">
+                  {msg.content}
+                </div>
+              )}
             </div>
           ))
         )}
