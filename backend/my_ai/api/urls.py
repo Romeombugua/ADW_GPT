@@ -7,10 +7,16 @@ from .views import (
     ChatSessionListCreateView,
     ChatSessionDetailView,
     ChatMessageView,
-    ChatMessageListView
+    ChatMessageListView,
+    login_view,
+    logout_view
 )
 
 urlpatterns = [
+    # Authentication URLs
+    path('login/', login_view, name='login'),
+    path('logout/', logout_view, name='logout'),
+    
     # Project URLs
     path('projects/', ProjectListCreateView.as_view(), name='project-list-create'),
     path('projects/<int:project_id>/', ProjectDetailView.as_view(), name='project-detail'),

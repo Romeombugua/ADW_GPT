@@ -32,6 +32,7 @@ ALLOWED_HOSTS = [
     "localhost",
     "92.205.25.96",
     "soback.cbu.net",
+    '127.0.0.1'
 ]
 
 # Application definition
@@ -45,6 +46,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'api',
     'rest_framework',
+    'rest_framework.authtoken',
     'corsheaders',
 ]
 
@@ -140,6 +142,17 @@ CORS_ALLOW_ALL_ORIGINS = True
 #     "https://soback.cbu.net",
 #     "http://adw-chat.cbu.net", # Added frontend origin
 # ]
+
+# Django REST Framework settings
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.TokenAuthentication',
+        'rest_framework.authentication.SessionAuthentication',
+    ],
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticated',
+    ],
+}
 
 STATIC_URL = '/static/'
 STATICFILES_DIRS = [

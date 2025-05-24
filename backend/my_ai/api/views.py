@@ -1,9 +1,13 @@
 from django.shortcuts import render, get_object_or_404
 from django.conf import settings
 from django.core.files.storage import FileSystemStorage
+from django.contrib.auth import authenticate
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status, generics, serializers
+from rest_framework.authtoken.models import Token
+from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.decorators import api_view, permission_classes
 from openai import OpenAI
 import os
 import logging
@@ -333,3 +337,35 @@ class ChatMessageListView(generics.ListAPIView):
         # Ensure the session belongs to the project before querying messages
         get_object_or_404(ChatSession, pk=session_id, project_id=project_id)
         return ChatMessage.objects.filter(session_id=session_id).order_by('timestamp')
+
+# --- Authentication Views --- #
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def login_view(request):
+    username = request.data.get('username')
+    password = request.data.get('password')
+
+    if not username or not password:
+        return Response({"error": "Username and password are required."}, status=status.HTTP_400_BAD_REQUEST)
+
+    user = authenticate(request, username=username, password=password)
+
+    if user is not None:
+        # Authentication successful, generate or get auth token
+        token, created = Token.objects.get_or_create(user=user)
+        logger.info(f"User {username} logged in successfully.")
+        return Response({"token": token.key}, status=status.HTTP_200_OK)
+    else:
+        logger.warning(f"Failed login attempt for user {username}.")
+        return Response({"error": "Invalid username or password."}, status=status.HTTP_401_UNAUTHORIZED)
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def logout_view(request):
+    try:
+        request.user.auth_token.delete()
+        logger.info(f"User {request.user.username} logged out successfully.")
+        return Response({"message": "Logged out successfully."}, status=status.HTTP_200_OK)
+    except Exception as e:
+        logger.error(f"Error logging out user {request.user.username}: {e}")
+        return Response({"error": "An error occurred while logging out."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
