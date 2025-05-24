@@ -1,12 +1,16 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import * as apiService from './apiService';
 import ProjectList from './components/ProjectList';
 import SessionList from './components/SessionList';
 import FileUpload from './components/FileUpload';
 import ChatWindow from './components/ChatWindow';
+import MobileHandler from './components/MobileHandler';
+import Login from './components/Login';
 import './App.css';
 
 function App() {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
   const [projects, setProjects] = useState([]);
   const [selectedProject, setSelectedProject] = useState(null);
   const [sessions, setSessions] = useState([]);
@@ -25,6 +29,16 @@ function App() {
   });
   // Track uploaded files for the selected project
   const [projectFiles, setProjectFiles] = useState([]);
+
+  // Check authentication on app load
+  useEffect(() => {
+    const checkAuth = () => {
+      const isAuth = apiService.isAuthenticated();
+      setIsAuthenticated(isAuth);
+      setIsCheckingAuth(false);
+    };
+    checkAuth();
+  }, []);
 
   // Apply theme class to document body
   useEffect(() => {
@@ -47,23 +61,26 @@ function App() {
     setIsLoading(false);
   };
 
-  // Fetch projects on component mount
-  useEffect(() => {
-    const loadProjects = async () => {
-      setIsLoading(true);
-      handleError('');
-      try {
-        const response = await apiService.fetchProjects();
-        setProjects(response.data);
-      } catch (err) {
-        console.error("Error fetching projects:", err);
-        handleError('Failed to load projects.');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    loadProjects();
+  const loadProjects = useCallback(async () => {
+    setIsLoading(true);
+    handleError('');
+    try {
+      const response = await apiService.fetchProjects();
+      setProjects(response.data);
+    } catch (err) {
+      console.error("Error fetching projects:", err);
+      handleError('Failed to load projects.');
+    } finally {
+      setIsLoading(false);
+    }
   }, []);
+
+  // Fetch projects when authenticated
+  useEffect(() => {
+    if (isAuthenticated) {
+      loadProjects();
+    }
+  }, [isAuthenticated, loadProjects]);
 
   // Fetch sessions when a project is selected
   useEffect(() => {
@@ -122,8 +139,52 @@ function App() {
     setSessionsPanelCollapsed(!sessionsPanelCollapsed);
   };
 
+  // Authentication handlers
+  const handleLoginSuccess = () => {
+    setIsAuthenticated(true);
+    // Reload projects after login
+    loadProjects();
+  };
+
+  const handleLogout = async () => {
+    try {
+      await apiService.logout();
+    } catch (error) {
+      console.error('Logout error:', error);
+    } finally {
+      localStorage.removeItem('authToken');
+      setIsAuthenticated(false);
+      setProjects([]);
+      setSelectedProject(null);
+      setSessions([]);
+      setSelectedSession(null);
+    }
+  };
+
+  // Show loading screen while checking authentication
+  if (isCheckingAuth) {
+    return (
+      <div className="app-container">
+        <div className="loading">Checking authentication...</div>
+      </div>
+    );
+  }
+
+  // Show login if not authenticated
+  if (!isAuthenticated) {
+    return <Login onLoginSuccess={handleLoginSuccess} />;
+  }
+
   return (
     <div className="app-container">
+      {/* Add MobileHandler component to handle responsive behavior */}
+      <MobileHandler 
+        setProjectsPanelCollapsed={setProjectsPanelCollapsed}
+        setSessionsPanelCollapsed={setSessionsPanelCollapsed}
+        selectedProject={selectedProject}
+        selectedSession={selectedSession}
+      />
+      
       {/* Header */}
       <header className="app-header">
         <div className="header-left">
@@ -152,6 +213,10 @@ function App() {
           <div className="header-actions">
             <button className="header-btn" title="Toggle theme" onClick={toggleTheme}>
               <span className="header-btn-icon">{darkMode ? '☀️' : '🌙'}</span>
+            </button>
+            <button className="header-btn logout-btn" title="Logout" onClick={handleLogout}>
+              <span className="header-btn-icon">🚪</span>
+              <span className="logout-text">Logout</span>
             </button>
           </div>
         </div>

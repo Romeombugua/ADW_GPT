@@ -64,7 +64,7 @@ function SessionList({ sessions, selectedSession, onSelectSession, onSessionCrea
   return (
     <>
       <form className="create-form" onSubmit={handleCreateSession}>
-        <div className="input-group">
+        <div className="input-group mobile-friendly">
           <input
             type="text"
             className="form-input"

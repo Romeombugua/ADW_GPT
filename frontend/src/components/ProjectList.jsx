@@ -35,10 +35,13 @@ function ProjectList({ projects, selectedProject, onSelectProject, onProjectCrea
     }
   };
 
+  // Check if we're on a mobile device
+  const isMobile = typeof window !== 'undefined' && window.innerWidth <= 768;
+
   return (
     <>
       <form className="create-form" onSubmit={handleCreateProject}>
-        <div className="input-group">
+        <div className="input-group mobile-friendly">
           <input
             type="text"
             className="form-input"
@@ -47,25 +50,27 @@ function ProjectList({ projects, selectedProject, onSelectProject, onProjectCrea
             placeholder="New project name"
             disabled={isLoading || isCreating}
           />
-          <select
-            className="form-select"
-            value={selectedModel}
-            onChange={(e) => setSelectedModel(e.target.value)}
-            disabled={isLoading || isCreating}
-          >
-            {availableModels.map(model => (
-              <option key={model.id} value={model.id}>
-                {model.name}
-              </option>
-            ))}
-          </select>
-          <button 
-            type="submit" 
-            className="btn btn-primary"
-            disabled={isLoading || isCreating || !newProjectName.trim()}
-          >
-            {isCreating ? '...' : 'Create'}
-          </button>
+          <div className="select-button-group">
+            <select
+              className="form-select"
+              value={selectedModel}
+              onChange={(e) => setSelectedModel(e.target.value)}
+              disabled={isLoading || isCreating}
+            >
+              {availableModels.map(model => (
+                <option key={model.id} value={model.id}>
+                  {isMobile ? model.id : model.name}
+                </option>
+              ))}
+            </select>
+            <button 
+              type="submit" 
+              className="btn btn-primary"
+              disabled={isLoading || isCreating || !newProjectName.trim()}
+            >
+              {isCreating ? '...' : 'Create'}
+            </button>
+          </div>
         </div>
       </form>
       
