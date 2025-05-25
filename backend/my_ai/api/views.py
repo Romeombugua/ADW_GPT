@@ -36,29 +36,58 @@ def get_or_create_assistant(project):
                 )
                 logger.info(f"Updated Assistant {assistant.id} model to {project.model}.")
 
-            # Ensure the assistant is still linked to the correct vector store
-            if not assistant.tool_resources or not assistant.tool_resources.file_search or project.openai_vector_store_id not in assistant.tool_resources.file_search.vector_store_ids:
-                logger.warning(f"Assistant {assistant.id} not linked to vector store {project.openai_vector_store_id}. Updating.")
+            # Ensure the assistant is linked to the vector store if available
+            if project.openai_vector_store_id:
+                should_update = False
+                
+                # Check if tools need to be added
+                if not hasattr(assistant, 'tools') or not any(tool.get('type') == 'file_search' for tool in assistant.tools):
+                    logger.warning(f"Assistant {assistant.id} missing file_search tool. Will update.")
+                    should_update = True
+                
+                # Check if vector store linkage needs to be updated
+                if not hasattr(assistant, 'tool_resources') or not hasattr(assistant.tool_resources, 'file_search') or project.openai_vector_store_id not in assistant.tool_resources.file_search.vector_store_ids:
+                    logger.warning(f"Assistant {assistant.id} not linked to vector store {project.openai_vector_store_id}. Will update.")
+                    should_update = True
+                
+                if should_update:
+                    assistant = client.beta.assistants.update(
+                        assistant_id=assistant.id,
+                        tools=[{"type": "file_search"}],
+                        tool_resources={"file_search": {"vector_store_ids": [project.openai_vector_store_id]}}
+                    )
+                    logger.info(f"Updated Assistant {assistant.id} with vector store linkage.")
+            elif hasattr(assistant, 'tool_resources') and hasattr(assistant.tool_resources, 'file_search'):
+                # Remove vector store linkage if project no longer has a vector store
+                logger.warning(f"Assistant {assistant.id} has file_search tool but project has no vector store. Removing tool.")
                 assistant = client.beta.assistants.update(
                     assistant_id=assistant.id,
-                    tool_resources={"file_search": {"vector_store_ids": [project.openai_vector_store_id]}}
+                    tools=[],  # Remove file_search tool
+                    tool_resources={}
                 )
-                logger.info(f"Updated Assistant {assistant.id} linkage.")
+                logger.info(f"Removed file_search tool from Assistant {assistant.id}.")
             return assistant
         except Exception as e:
             logger.error(f"Failed to retrieve or update assistant {project.openai_assistant_id}, creating new one: {e}")
+            # Continue to create a new assistant
 
-    if not project.openai_vector_store_id:
-        raise ValueError("Project must have a vector store before creating an assistant.")
-
+    # Create the assistant with or without vector store
     try:
-        assistant = client.beta.assistants.create(
-            name=f"Assistant for Project {project.id} - {project.name}",
-            instructions="You are a helpful chatbot. Use the provided files associated with this project to answer questions accurately. When referencing information from a file, please indicate the source.",
-            model=project.model, # Use the model from the project
-            tools=[{"type": "file_search"}],
-            tool_resources={"file_search": {"vector_store_ids": [project.openai_vector_store_id]}}
-        )
+        assistant_params = {
+            "name": f"Assistant for Project {project.id} - {project.name}",
+            "instructions": "You are a helpful chatbot. Use the provided files associated with this project to answer questions accurately. When referencing information from a file, please indicate the source.",
+            "model": project.model, # Use the model from the project
+        }
+        
+        # Add file_search tool and vector_store only if available
+        if project.openai_vector_store_id:
+            assistant_params["tools"] = [{"type": "file_search"}]
+            assistant_params["tool_resources"] = {"file_search": {"vector_store_ids": [project.openai_vector_store_id]}}
+            logger.info(f"Creating assistant with vector store {project.openai_vector_store_id}")
+        else:
+            logger.info(f"Creating assistant without vector store")
+            
+        assistant = client.beta.assistants.create(**assistant_params)
         project.openai_assistant_id = assistant.id
         project.save()
         logger.info(f"Created new Assistant {assistant.id} for Project {project.id} using model {project.model}")
@@ -211,8 +240,9 @@ class ChatMessageView(APIView):
         if not user_message_content:
             return Response({"error": "No message provided"}, status=status.HTTP_400_BAD_REQUEST)
 
+        # Vector store is now optional - will proceed with or without it
         if not project.openai_vector_store_id:
-             return Response({"error": "Project has no associated knowledge base (Vector Store). Upload files first."}, status=status.HTTP_400_BAD_REQUEST)
+            logger.warning(f"Project {project.id} has no vector store. Assistant will function without file search capability.")
 
         thread_id = chat_session.openai_thread_id
 
