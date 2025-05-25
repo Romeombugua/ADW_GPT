@@ -1371,7 +1371,21 @@ li.empty-state p {
   border-left: 3px solid var(--warning);
 }
 
-.warning-icon {
+/* File Info Message */
+.file-info-message {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  margin-top: var(--spacing-2);
+  padding: var(--spacing-3);
+  background-color: rgba(59, 130, 246, 0.1); /* Info color with low opacity */
+  color: var(--info);
+  border-radius: var(--border-radius-md);
+  font-size: 0.85rem;
+  border-left: 3px solid var(--info);
+}
+
+.warning-icon, .info-icon {
   font-size: 1rem;
 }
 

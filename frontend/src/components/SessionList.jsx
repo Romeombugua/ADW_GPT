@@ -6,18 +6,14 @@ function SessionList({ sessions, selectedSession, onSelectSession, onSessionCrea
   const [newSessionName, setNewSessionName] = useState('');
   const [isCreating, setIsCreating] = useState(false);
   
-  // Check if there are files uploaded for this project
+  // Check if there are files uploaded for this project (optional now)
   const hasFiles = projectFiles && projectFiles.length > 0;
 
   const handleCreateSession = async (e) => {
     e.preventDefault();
     if (!newSessionName.trim() || !selectedProject) return;
     
-    // Check if files have been uploaded
-    if (!projectFiles || projectFiles.length === 0) {
-      onError('Please upload at least one file before creating a session.');
-      return;
-    }
+    // Files are now optional since backend supports assistants without vector stores
     
     setIsCreating(true);
     onError('');
@@ -71,21 +67,21 @@ function SessionList({ sessions, selectedSession, onSelectSession, onSessionCrea
             value={newSessionName}
             onChange={(e) => setNewSessionName(e.target.value)}
             placeholder="New session name"
-            disabled={isLoading || isCreating || !selectedProject || !hasFiles}
+            disabled={isLoading || isCreating || !selectedProject}
           />
           <button
             type="submit"
             className="btn btn-primary"
-            disabled={isLoading || isCreating || !newSessionName.trim() || !selectedProject || !hasFiles}
+            disabled={isLoading || isCreating || !newSessionName.trim() || !selectedProject}
           >
             {isCreating ? '...' : 'Create'}
           </button>
         </div>
         
         {selectedProject && !hasFiles && (
-          <div className="file-warning-message">
-            <span className="warning-icon">⚠️</span>
-            <span>Please upload at least one file before creating a session</span>
+          <div className="file-info-message">
+            <span className="info-icon">ℹ️</span>
+            <span>The assistant will operate in basic mode without file context. Upload files for better context-aware responses.</span>
           </div>
         )}
       </form>
