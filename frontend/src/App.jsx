@@ -190,7 +190,7 @@ function App() {
         <div className="header-left">
           <div className="logo">
             <span className="logo-icon">🤖</span>
-            <h1>ADW Assistant</h1>
+            <h1>Assistant</h1>
           </div>
         </div>
         

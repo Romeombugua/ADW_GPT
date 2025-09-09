@@ -413,8 +413,8 @@ body {
 /* Sidebar containers */
 .sidebars-container {
   display: flex;
-  min-width: 280px; /* Minimum width for both sidebars together */
-  max-width: 600px; /* Maximum width they can take */
+  min-width: 580px; /* Minimum width for both sidebars together */
+  max-width: 800px; /* Maximum width they can take */
   border-right: 1px solid var(--neutral-200);
 }
 
@@ -1425,15 +1425,22 @@ li.empty-state p {
 
 .select-button-group {
   display: flex;
+  flex-direction: column;
   gap: var(--spacing-2);
 }
 
 .select-button-group .form-select {
   flex: 1;
+  width: auto;
+  max-width: 80px;
 }
 
 .select-button-group .btn {
   white-space: nowrap;
+  padding: var(--spacing-1) var(--spacing-3);
+  font-size: 0.8rem;
+  width: auto;
+  max-width: 80px;
 }
 
 @media (min-width: 769px) {
